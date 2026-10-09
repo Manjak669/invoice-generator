@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoice Generator — free, private, in your browser</title>
+  <meta name="description" content="Create a clean invoice and download it as PDF in seconds. No sign-up, data stays in your browser.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='10' y='4' width='44' height='56' rx='8' fill='%234f46e5'/%3E%3Cpath d='M20 20h24M20 30h24M20 40h14' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="4" width="44" height="56" rx="8" fill="currentColor"/><path d="M20 20h24M20 30h24M20 40h14" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>
+      <span>Invoice Generator</span>
+    </div>
+    <div class="actions">
+      <span class="saved" id="saved" aria-live="polite">Saved</span>
+      <button class="btn btn--ghost" id="new" type="button">New</button>
+      <button class="btn btn--ghost" id="export" type="button">Export JSON</button>
+      <label class="btn btn--ghost" for="import">Import</label>
+      <input type="file" id="import" accept="application/json" class="sr-only">
+      <button class="btn" id="pdf" type="button">Download PDF</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <form class="editor no-print" id="editor" autocomplete="off" aria-label="Invoice details">
+      <section class="group">
+        <h2>Invoice</h2>
+        <div class="grid2">
+          <label>Number<input name="number"></label>
+          <label>Currency
+            <select name="currency">
+              <option>USD</option><option>EUR</option><option>GBP</option><option>ILS</option><option>UAH</option><option>RUB</option>
+            </select>
+          </label>
+          <label>Issue date<input type="date" name="issued"></label>
+          <label>Due date<input type="date" name="due"></label>
+        </div>
+        <div class="grid2">
+          <label>Accent colour<input type="color" name="accent"></label>
+          <label>Logo
+            <span class="logo-input">
+              <input type="file" accept="image/*" id="logo-file">
+              <button type="button" class="link" id="logo-clear">Remove</button>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>From</h2>
+        <label>Name / company<input name="fromName"></label>
+        <label>Details<textarea name="fromDetails" rows="3" placeholder="Address, email, tax ID"></textarea></label>
+      </section>
+
+      <section class="group">
+        <h2>Bill to</h2>
+        <label>Client<input name="toName"></label>
+        <label>Details<textarea name="toDetails" rows="3"></textarea></label>
+      </section>
+
+      <section class="group">
+        <h2>Items</h2>
+        <div class="items-head" aria-hidden="true"><span>Description</span><span>Qty</span><span>Price</span><span></span></div>
+        <div id="items"></div>
+        <button type="button" class="btn btn--ghost btn--full" id="add-item">+ Add item</button>
+      </section>
+
+      <section class="group">
+        <h2>Totals</h2>
+        <div class="grid2">
+          <label>Discount %<input type="number" name="discount" min="0" max="100" step="0.1"></label>
+          <label>Tax / VAT %<input type="number" name="tax" min="0" max="100" step="0.1"></label>
+        </div>
+        <label>Notes<textarea name="notes" rows="3" placeholder="Payment details, thank-you note"></textarea></label>
+      </section>
+    </form>
+
+    <section class="preview-wrap" aria-label="Invoice preview">
+      <article class="paper" id="paper">
+        <header class="inv-head">
+          <div>
+            <img id="p-logo" alt="" hidden>
+            <h1 class="inv-title">Invoice</h1>
+            <p class="muted">No. <span id="p-number"></span></p>
+          </div>
+          <dl class="inv-dates">
+            <div><dt>Issued</dt><dd id="p-issued"></dd></div>
+            <div><dt>Due</dt><dd id="p-due"></dd></div>
+          </dl>
+        </header>
+
+        <div class="parties">
+          <div><p class="label">From</p><p class="strong" id="p-fromName"></p><p class="pre" id="p-fromDetails"></p></div>
+          <div><p class="label">Bill to</p><p class="strong" id="p-toName"></p><p class="pre" id="p-toDetails"></p></div>
+        </div>
+
+        <table class="lines">
+          <thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Amount</th></tr></thead>
+          <tbody id="p-lines"></tbody>
+        </table>
+
+        <div class="totals">
+          <div><span>Subtotal</span><span id="p-subtotal"></span></div>
+          <div id="row-discount"><span>Discount <span id="p-discount-rate"></span></span><span id="p-discount"></span></div>
+          <div id="row-tax"><span>Tax <span id="p-tax-rate"></span></span><span id="p-tax"></span></div>
+          <div class="grand"><span>Total due</span><span id="p-total"></span></div>
+        </div>
+
+        <footer class="inv-notes" id="p-notes-wrap"><p class="label">Notes</p><p class="pre" id="p-notes"></p></footer>
+      </article>
+    </section>
+  </main>
+
+  <footer class="credit no-print">Your data never leaves this browser. Built by <a href="https://moonwave-studio.com" target="_blank" rel="noopener">MoonWave</a>.</footer>
+
+  <template id="item-tpl">
+    <div class="item">
+      <input name="desc" aria-label="Description" placeholder="Website design">
+      <input name="qty" type="number" min="0" step="any" aria-label="Quantity">
+      <input name="price" type="number" min="0" step="any" aria-label="Unit price">
+      <button type="button" class="remove" aria-label="Remove item">×</button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
